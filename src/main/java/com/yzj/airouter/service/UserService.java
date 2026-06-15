@@ -7,9 +7,13 @@ import com.yzj.airouter.model.entity.User;
 import com.yzj.airouter.model.vo.LoginUserVO;
 import com.yzj.airouter.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
-
 import java.util.List;
 
+/**
+ *  服务层。
+ *
+ * @author <a href="https://github.com/yozp">yunikon</a>
+ */
 public interface UserService extends IService<User> {
 
     /**
