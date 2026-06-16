@@ -63,3 +63,78 @@ create table if not exists api_key
     INDEX idx_userId (userId),
     INDEX idx_status (status)
 ) comment 'API Key' collate = utf8mb4_unicode_ci;
+
+-- 模型提供者表
+create table if not exists model_provider
+(
+    id           bigint auto_increment comment 'id' primary key,
+    providerName varchar(64)                             not null comment '提供者名称（如：qwen/zhipu/deepseek）',
+    displayName  varchar(128)                            not null comment '显示名称（如：通义千问/智谱AI/DeepSeek）',
+    baseUrl      varchar(512)                            not null comment 'API基础URL',
+    apiKey       varchar(512)                            not null comment 'API密钥',
+    status       varchar(32)   default 'active'          not null comment '状态：active/inactive/maintenance',
+    healthStatus varchar(32)   default 'unknown'         not null comment '健康状态：healthy/unhealthy/degraded/unknown',
+    avgLatency   int           default 0                 not null comment '平均延迟（毫秒）',
+    successRate  decimal(5, 2) default 100.00            not null comment '成功率（百分比）',
+    priority     int           default 100               not null comment '优先级（越大越优先）',
+    config       text                                    null comment '额外配置（JSON格式）',
+    createTime   datetime      default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime   datetime      default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete     tinyint       default 0                 not null comment '是否删除',
+    UNIQUE KEY uk_providerName (providerName),
+    INDEX idx_status (status),
+    INDEX idx_healthStatus (healthStatus)
+) comment '模型提供者' collate = utf8mb4_unicode_ci;
+
+-- 初始化模型提供者
+INSERT INTO model_provider (providerName, displayName, baseUrl, apiKey, status, priority)
+VALUES ('qwen', '通义千问', 'https://dashscope.aliyuncs.com/compatible-mode', 'YOUR_QWEN_API_KEY', 'active', 100),
+       ('zhipu', '智谱AI', 'https://open.bigmodel.cn/api/paas', 'YOUR_ZHIPU_API_KEY', 'active', 90),
+       ('deepseek', 'DeepSeek', 'https://api.deepseek.com', 'YOUR_DEEPSEEK_API_KEY', 'active', 80);
+
+-- 模型表
+create table if not exists model
+(
+    id               bigint auto_increment comment 'id' primary key,
+    providerId       bigint                                   not null comment '提供者id',
+    modelKey         varchar(128)                             not null comment '模型标识（如：qwen-plus）',
+    modelName        varchar(128)                             not null comment '模型显示名称',
+    modelType        varchar(32)    default 'chat'            not null comment '模型类型：chat/embedding/image/audio',
+    description      varchar(512)                             null comment '模型描述',
+    contextLength    int            default 4096              not null comment '上下文长度限制',
+    inputPrice       decimal(10, 6) default 0                 not null comment '输入价格（元/千Token）',
+    outputPrice      decimal(10, 6) default 0                 not null comment '输出价格（元/千Token）',
+    status           varchar(32)    default 'active'          not null comment '状态：active/inactive/deprecated',
+    healthStatus     varchar(32)    default 'unknown'         not null comment '健康状态：healthy/unhealthy/degraded/unknown',
+    avgLatency       int            default 0                 not null comment '平均延迟（毫秒）',
+    successRate      decimal(5, 2)  default 100.00            not null comment '成功率（百分比）',
+    score            decimal(10, 4) default 0                 not null comment '综合得分（越低越好）',
+    priority         int            default 100               not null comment '优先级（越大越优先）',
+    defaultTimeout   int            default 60000             not null comment '默认超时时间（毫秒）',
+    supportReasoning tinyint        default 0                 not null comment '是否支持深度思考：0=不支持，1=支持',
+    capabilities     varchar(512)                             null comment '能力标签（JSON数组）',
+    createTime       datetime       default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime       datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete         tinyint        default 0                 not null comment '是否删除',
+    UNIQUE KEY uk_modelKey (modelKey),
+    INDEX idx_providerId (providerId),
+    INDEX idx_modelType (modelType),
+    INDEX idx_status (status),
+    INDEX idx_healthStatus (healthStatus)
+) comment '模型' collate = utf8mb4_unicode_ci;
+
+-- 初始化模型数据
+INSERT INTO model (providerId, modelKey, modelName, modelType, description, contextLength, inputPrice, outputPrice, priority, supportReasoning)
+VALUES
+-- 通义千问模型
+(1, 'qwen-plus', 'Qwen Plus', 'chat', '通义千问增强版，性能更强', 32768, 0.004, 0.004, 100, 1),
+(1, 'qwen-turbo', 'Qwen Turbo', 'chat', '通义千问快速版，响应更快', 8192, 0.002, 0.002, 90, 0),
+
+-- 智谱AI模型
+(2, 'glm-4.7-flash', 'GLM-4.7 Flash', 'chat', '智谱AI免费模型', 204800, 0.0001, 0.0001, 80, 0),
+
+-- DeepSeek模型
+(3, 'deepseek-reasoner', 'DeepSeek Reasoner', 'chat', 'DeepSeek对话模型，支持深度思考', 32768, 0.001, 0.002, 100, 1),
+(3, 'deepseek-chat', 'DeepSeek Chat', 'chat', 'DeepSeek对话模型', 32768, 0.001, 0.002, 100, 0);
+
+
