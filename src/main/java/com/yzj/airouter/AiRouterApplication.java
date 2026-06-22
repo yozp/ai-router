@@ -7,6 +7,7 @@ import org.springframework.ai.model.openai.autoconfigure.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(exclude = {
         // 排除 OpenAI 自动配置
@@ -30,6 +31,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 })
 @MapperScan("com.yzj.airouter.mapper") //扫描 Mapper 文件
 @EnableAsync
+@EnableScheduling
 public class AiRouterApplication {
 
     public static void main(String[] args) {

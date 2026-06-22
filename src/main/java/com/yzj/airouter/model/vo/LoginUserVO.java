@@ -8,8 +8,6 @@ import java.time.LocalDateTime;
 
 /**
  * 脱敏后的登录用户信息
- *
- * @author <a href="https://codefather.cn">编程导航学习圈</a>
  */
 @Data
 public class LoginUserVO implements Serializable {

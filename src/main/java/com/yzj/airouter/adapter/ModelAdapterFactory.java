@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * 模型适配器工厂
+ * 根据提供者名称返回对应的模型适配器
+ */
 @Slf4j
 @Component
 public class ModelAdapterFactory {
