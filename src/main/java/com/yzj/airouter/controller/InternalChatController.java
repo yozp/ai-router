@@ -76,10 +76,10 @@ public class InternalChatController {
         Boolean stream = request.getStream();
         if (stream != null && stream) {
             // 流式响应
-            return chatService.chatStream(request, loginUser.getId(), apiKey.getId());
+            return null;
         } else {
             // 非流式响应
-            ChatResponse response = chatService.chat(request, loginUser.getId(), apiKey.getId());
+            ChatResponse response = null;
             return ResultUtils.success(response);
         }
     }

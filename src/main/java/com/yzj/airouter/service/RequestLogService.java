@@ -1,6 +1,7 @@
 package com.yzj.airouter.service;
 
 import com.mybatisflex.core.service.IService;
+import com.yzj.airouter.model.dto.log.RequestLogDTO;
 import com.yzj.airouter.model.entity.RequestLog;
 import java.util.List;
 
@@ -14,9 +15,7 @@ public interface RequestLogService extends IService<RequestLog> {
     /**
      * 记录请求日志
      */
-    void logRequest(Long userId, Long apiKeyId, String modelName,
-                    Integer promptTokens, Integer completionTokens, Integer totalTokens,
-                    Integer duration, String status, String errorMessage);
+    void logRequest(RequestLogDTO logDTO);
 
     /**
      * 查询用户的请求日志

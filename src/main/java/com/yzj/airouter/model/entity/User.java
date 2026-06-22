@@ -12,8 +12,12 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 用户 实体类。
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -65,6 +69,30 @@ public class User implements Serializable {
      */
     @Column("userRole")
     private String userRole;
+
+    /**
+     * 用户状态：active/disabled
+     */
+    @Column("userStatus")
+    private String userStatus;
+
+    /**
+     * Token配额（-1表示无限制）
+     */
+    @Column("tokenQuota")
+    private Long tokenQuota;
+
+    /**
+     * 已使用Token数
+     */
+    @Column("usedTokens")
+    private Long usedTokens;
+
+    /**
+     * 账户余额（元）
+     */
+    @Column("balance")
+    private BigDecimal balance;
 
     /**
      * 编辑时间

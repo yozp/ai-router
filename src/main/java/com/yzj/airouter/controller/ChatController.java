@@ -62,10 +62,10 @@ public class ChatController {
         Boolean stream = request.getStream();
         if (stream != null && stream) {
             // 流式响应
-            return chatService.chatStream(request, apiKey.getUserId(), apiKey.getId());
+            return null;
         } else {
             // 非流式响应
-            return chatService.chat(request, apiKey.getUserId(), apiKey.getId());
+            return null;
         }
     }
 }

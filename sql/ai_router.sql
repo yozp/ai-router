@@ -8,19 +8,24 @@ use ai_router;
 create table if not exists user
 (
     id           bigint auto_increment comment 'id' primary key,
-    userAccount  varchar(256)                           not null comment '账号',
-    userPassword varchar(512)                           not null comment '密码',
-    userName     varchar(256)                           null comment '用户昵称',
-    userAvatar   varchar(1024)                          null comment '用户头像',
-    userProfile  varchar(512)                           null comment '用户简介',
-    userRole     varchar(256) default 'user'            not null comment '用户角色：user/admin',
-    editTime     datetime     default CURRENT_TIMESTAMP not null comment '编辑时间',
-    createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    isDelete     tinyint      default 0                 not null comment '是否删除',
+    userAccount  varchar(256)                             not null comment '账号',
+    userPassword varchar(512)                             not null comment '密码',
+    userName     varchar(256)                             null comment '用户昵称',
+    userAvatar   varchar(1024)                            null comment '用户头像',
+    userProfile  varchar(512)                             null comment '用户简介',
+    userRole     varchar(256)   default 'user'            not null comment '用户角色：user/admin',
+    userStatus   varchar(32)    default 'active'          not null comment '用户状态：active/disabled',
+    tokenQuota   bigint         default -1                not null comment 'Token配额（-1表示无限制）',
+    usedTokens   bigint         default 0                 not null comment '已使用Token数',
+    balance      decimal(12, 4) default 0.0000            not null comment '账户余额（元）',
+    editTime     datetime       default CURRENT_TIMESTAMP not null comment '编辑时间',
+    createTime   datetime       default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime   datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete     tinyint        default 0                 not null comment '是否删除',
     UNIQUE KEY uk_userAccount (userAccount),
-    INDEX idx_userName (userName)
-    ) comment '用户' collate = utf8mb4_unicode_ci;
+    INDEX idx_userName (userName),
+    INDEX idx_userStatus (userStatus)
+) comment '用户' collate = utf8mb4_unicode_ci;
 
 -- 密码是 12345678(MD5 加密 + 盐值 yupi)
 INSERT INTO user (id, userAccount, userPassword, userName, userAvatar, userProfile, userRole) VALUES
@@ -29,20 +34,34 @@ INSERT INTO user (id, userAccount, userPassword, userName, userAvatar, userProfi
 -- 请求日志表（用于记录每次请求和Token消耗）
 create table if not exists request_log
 (
-    id              bigint auto_increment comment 'id' primary key,
-    userId          bigint                                 null comment '用户id',
-    apiKeyId        bigint                                 null comment 'API Key id',
-    modelName       varchar(128)                           not null comment '使用的模型名称',
-    promptTokens    int          default 0                 not null comment '输入Token数',
-    completionTokens int         default 0                 not null comment '输出Token数',
-    totalTokens     int          default 0                 not null comment '总Token数',
-    duration        int          default 0                 not null comment '请求耗时（毫秒）',
-    status          varchar(32)  default 'success'         not null comment '状态：success/failed',
-    errorMessage    text                                   null comment '错误信息',
-    createTime      datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
-    updateTime      datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    id               bigint auto_increment comment 'id' primary key,
+    traceId          varchar(64)                              null comment '链路追踪ID',
+    userId           bigint                                   null comment '用户id',
+    apiKeyId         bigint                                   null comment 'API Key id',
+    modelId          bigint                                   null comment '实际调用的模型id',
+    requestModel     varchar(128)                             null comment '请求的模型标识',
+    modelName        varchar(128)                             null comment '使用的模型名称（兼容字段）',
+    requestType      varchar(32)    default 'chat'            not null comment '请求类型：chat/embedding/image',
+    source           varchar(32)    default 'web'             not null comment '调用来源：web/api',
+    promptTokens     int            default 0                 not null comment '输入Token数',
+    completionTokens int            default 0                 not null comment '输出Token数',
+    totalTokens      int            default 0                 not null comment '总Token数',
+    cost             decimal(12, 6) default 0                 not null comment '本次请求费用（元）',
+    duration         int            default 0                 not null comment '请求耗时（毫秒）',
+    status           varchar(32)    default 'success'         not null comment '状态：success/failed',
+    errorMessage     text                                     null comment '错误信息',
+    errorCode        varchar(64)                              null comment '错误码',
+    routingStrategy  varchar(32)                              null comment '使用的路由策略',
+    isFallback       tinyint        default 0                 not null comment '是否为Fallback请求',
+    clientIp         varchar(64)                              null comment '客户端IP',
+    userAgent        varchar(512)                             null comment 'User-Agent',
+    createTime       datetime       default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime       datetime       default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    INDEX idx_traceId (traceId),
     INDEX idx_userId (userId),
     INDEX idx_apiKeyId (apiKeyId),
+    INDEX idx_modelId (modelId),
+    INDEX idx_source (source),
     INDEX idx_createTime (createTime)
 ) comment '请求日志' collate = utf8mb4_unicode_ci;
 
@@ -136,5 +155,38 @@ VALUES
 -- DeepSeek模型
 (3, 'deepseek-reasoner', 'DeepSeek Reasoner', 'chat', 'DeepSeek对话模型，支持深度思考', 32768, 0.001, 0.002, 100, 1),
 (3, 'deepseek-chat', 'DeepSeek Chat', 'chat', 'DeepSeek对话模型', 32768, 0.001, 0.002, 100, 0);
+
+-- 用户提供者密钥表（用户自己的 API Key）
+create table if not exists user_provider_key
+(
+    id           bigint auto_increment comment 'id' primary key,
+    userId       bigint                                 not null comment '用户 ID',
+    providerId   bigint                                 not null comment '提供者 ID',
+    providerName varchar(64)                            not null comment '提供者名称（冗余字段，便于查询）',
+    apiKey       varchar(512)                           not null comment 'API Key（加密存储）',
+    status       varchar(32)  default 'active'          not null comment '状态：active/inactive',
+    createTime   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime   datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    isDelete     tinyint      default 0                 not null comment '是否删除',
+    KEY uk_user_provider (userId, providerId)
+) comment '用户提供者密钥（BYOK）' collate = utf8mb4_unicode_ci;
+
+-- 消费账单表
+create table if not exists billing_record
+(
+    id            bigint auto_increment comment 'id' primary key,
+    userId        bigint                                not null comment '用户id',
+    requestLogId  bigint                                null comment '关联的请求日志ID',
+    amount        decimal(12, 4)                        not null comment '消费金额（元）',
+    balanceBefore decimal(12, 4)                        not null comment '消费前余额（元）',
+    balanceAfter  decimal(12, 4)                        not null comment '消费后余额（元）',
+    description   varchar(512)                          null comment '消费说明',
+    billingType   varchar(32) default 'api_call'        not null comment '账单类型：api_call/recharge/refund',
+    createTime    datetime    default CURRENT_TIMESTAMP not null comment '创建时间',
+    index idx_billingType (billingType),
+    index idx_createTime (createTime),
+    index idx_requestLogId (requestLogId),
+    index idx_userId (userId)
+) comment '消费账单' collate = utf8mb4_unicode_ci;
 
 

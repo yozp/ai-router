@@ -2,7 +2,9 @@ package com.yzj.airouter.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import com.yzj.airouter.model.dto.provider.ProviderQueryRequest;
 import com.yzj.airouter.model.entity.ModelProvider;
+import com.yzj.airouter.model.vo.ProviderVO;
 
 import java.math.BigDecimal;
 import java.util.List;
