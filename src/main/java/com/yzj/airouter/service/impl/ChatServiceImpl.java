@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 @Service
 public class ChatServiceImpl implements ChatService {
 
-    @Resource
-    private ChatModel chatModel;
+//    @Resource
+//    private ChatModel chatModel;
 
     @Resource
     private RequestLogService requestLogService;
@@ -147,6 +147,7 @@ public class ChatServiceImpl implements ChatService {
                                                  String clientIp, String userAgent) {
         // 尝试调用主模型
         try {
+            log.info("调用模型，{}", primaryModel.getModelKey());
             return callModel(primaryModel, chatRequest, userId, apiKeyId, traceId, startTime, strategyType, isFallback, clientIp, userAgent);
         } catch (Exception e) {
             log.warn("模型 {} 调用失败，尝试 Fallback", primaryModel.getModelKey(), e);

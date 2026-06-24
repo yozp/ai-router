@@ -1,6 +1,7 @@
 package com.yzj.airouter.controller;
 
 import com.yzj.airouter.annotation.AuthCheck;
+import com.yzj.airouter.annotation.RateLimit;
 import com.yzj.airouter.common.ResultUtils;
 import com.yzj.airouter.constant.UserConstant;
 import com.yzj.airouter.exception.BusinessException;
@@ -43,6 +44,7 @@ public class InternalChatController {
     @PostMapping(value = "/completions", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_EVENT_STREAM_VALUE})
     @AuthCheck(mustRole = UserConstant.DEFAULT_ROLE)
     @Operation(summary = "内部聊天接口")
+    @RateLimit(type = RateLimit.LimitType.IP, limit = 30)
     public Object chatCompletions(@RequestBody ChatRequest request,
                                    @RequestParam Long apiKeyId,
                                    HttpServletRequest httpRequest) {

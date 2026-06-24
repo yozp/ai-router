@@ -1,5 +1,6 @@
 package com.yzj.airouter.controller;
 
+import com.yzj.airouter.annotation.RateLimit;
 import com.yzj.airouter.exception.BusinessException;
 import com.yzj.airouter.exception.ErrorCode;
 import com.yzj.airouter.model.dto.chat.ChatRequest;
@@ -33,6 +34,7 @@ public class ChatController {
      */
     @PostMapping(value = "/completions", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_EVENT_STREAM_VALUE})
     @Operation(summary = "Chat Completions")
+    @RateLimit(type = RateLimit.LimitType.API_KEY, limit = 60)
     public Object chatCompletions(@RequestBody ChatRequest request,
                                   @RequestHeader(value = "Authorization", required = false) String authorization,
                                   HttpServletRequest httpRequest) {
