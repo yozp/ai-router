@@ -12,6 +12,7 @@ import com.yzj.airouter.mapper.UserMapper;
 import com.yzj.airouter.model.dto.user.UserQueryRequest;
 import com.yzj.airouter.model.entity.User;
 import com.yzj.airouter.model.enums.UserRoleEnum;
+import com.yzj.airouter.model.enums.UserStatusEnum;
 import com.yzj.airouter.model.vo.LoginUserVO;
 import com.yzj.airouter.model.vo.UserVO;
 import com.yzj.airouter.service.UserService;
@@ -182,6 +183,40 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
                 .like("userName", userName)
                 .like("userProfile", userProfile)
                 .orderBy(sortField, "ascend".equals(sortOrder));
+    }
+
+    @Override
+    public boolean disableUser(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        User user = new User();
+        user.setId(userId);
+        user.setUserStatus(UserStatusEnum.DISABLED.getValue());
+        return this.updateById(user);
+    }
+
+    @Override
+    public boolean enableUser(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        User user = new User();
+        user.setId(userId);
+        user.setUserStatus(UserStatusEnum.ACTIVE.getValue());
+        return this.updateById(user);
+    }
+
+    @Override
+    public boolean isUserDisabled(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        User user = this.getById(userId);
+        if (user == null) {
+            return true; // 用户不存在，视为禁用
+        }
+        return UserStatusEnum.DISABLED.getValue().equals(user.getUserStatus());
     }
 
 }
